@@ -13,7 +13,7 @@ import Css exposing (Style)
 
 generatedCssListHere____THIS_IS_MY_SPECIAL_CODE : String
 generatedCssListHere____THIS_IS_MY_SPECIAL_CODE =
-   ""
+   "<replacement-placeholder>"
 """
 
 
@@ -47,7 +47,7 @@ view =
                           , [ Review.Test.error
                                 { message = "TODO"
                                 , details = [ "" ]
-                                , under = "\"\""
+                                , under = "\"<replacement-placeholder>\""
                                 }
                                 |> Review.Test.whenFixed
                                     """module StubCssGenerator exposing (..)
