@@ -1,7 +1,5 @@
 module StubCssGenerator exposing (..)
 
-import Css exposing (Style)
-
 
 type alias GeneratedClass =
     { name : String

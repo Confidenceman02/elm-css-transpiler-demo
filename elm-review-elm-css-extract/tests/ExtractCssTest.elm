@@ -9,8 +9,6 @@ extractorModule : String
 extractorModule =
     """module StubCssGenerator exposing (..)
 
-import Css exposing (Style)
-
 generatedCssListHere____THIS_IS_MY_SPECIAL_CODE : String
 generatedCssListHere____THIS_IS_MY_SPECIAL_CODE =
    "<replacement-placeholder>"
@@ -27,12 +25,12 @@ all =
 import Css
 import Html as H exposing (Html)
 import Html.Styled exposing (..)
-import Html.Styled.Attributes exposing (css)
+import Html.Styled.Attributes
 
 
 view =
     div
-        [ css
+        [ Html.Styled.Attributes.css
             [ Css.backgroundColor (Css.hex "#ff375a")
             , Css.color (Css.hex "#ffffff")
             ]
@@ -51,8 +49,6 @@ view =
                                 }
                                 |> Review.Test.whenFixed
                                     """module StubCssGenerator exposing (..)
-
-import Css exposing (Style)
 
 generatedCssListHere____THIS_IS_MY_SPECIAL_CODE : String
 generatedCssListHere____THIS_IS_MY_SPECIAL_CODE =

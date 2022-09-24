@@ -2,7 +2,6 @@ module ExtractCss exposing (rule)
 
 import Dict exposing (Dict)
 import Elm.Syntax.Expression as Expression exposing (Expression)
-import Elm.Syntax.Import exposing (Import)
 import Elm.Syntax.Module as Module exposing (Module)
 import Elm.Syntax.ModuleName exposing (ModuleName)
 import Elm.Syntax.Node as Node exposing (Node)
@@ -10,18 +9,25 @@ import Elm.Syntax.Range exposing (Range)
 import Maybe.Extra
 import Review.Fix
 import Review.Rule as Rule exposing (Rule)
-import Set exposing (Set)
 
 
 type alias ProjectContext =
     { fixPlaceholderModuleKey : Maybe ( Rule.ModuleKey, Range )
+    , allCssProperties : Dict String (List (List String))
     }
 
 
 type alias ModuleContext =
-    { range : Maybe Range
-    , isSpecialModule : Bool
+    { moduleName : List String
+    , range : Maybe Range
+    , isProgramStringTarget : Bool
+    , cssStyles : List (List String)
     }
+
+
+cssModules : List (List String)
+cssModules =
+    [ [ "Html", "Styled", "Attributes" ], [ "Css" ] ]
 
 
 rule : Rule
@@ -47,8 +53,8 @@ moduleVisitor schema =
 
 
 expressionVisitor : Node Expression -> Rule.Direction -> ModuleContext -> ( List (Rule.Error {}), ModuleContext )
-expressionVisitor node _ context =
-    if context.isSpecialModule then
+expressionVisitor node direction context =
+    if context.isProgramStringTarget then
         case node |> Node.value of
             Expression.Literal literalString ->
                 if literalString == "<replacement-placeholder>" then
@@ -61,18 +67,39 @@ expressionVisitor node _ context =
                 ( [], context )
 
     else
-        ( [], context )
+        case ( node |> Node.value, direction ) of
+            ( Expression.FunctionOrValue moduleName f, Rule.OnEnter ) ->
+                let
+                    _ =
+                        Debug.log "FUNCTION" f
+
+                    isCssModule =
+                        List.member moduleName cssModules
+
+                    cssModuleName =
+                        if isCssModule then
+                            (moduleName ++ [ f ]) :: context.cssStyles
+
+                        else
+                            context.cssStyles
+                in
+                ( [], { context | cssStyles = cssModuleName } )
+
+            _ ->
+                ( [], context )
 
 
 initialProjectContext : ProjectContext
 initialProjectContext =
-    { fixPlaceholderModuleKey = Nothing }
+    { fixPlaceholderModuleKey = Nothing, allCssProperties = Dict.empty }
 
 
 fromProjectToModule : Rule.ModuleKey -> Node ModuleName -> ProjectContext -> ModuleContext
-fromProjectToModule moduleKey moduleName projectContext =
-    { range = Nothing
-    , isSpecialModule = False
+fromProjectToModule _ moduleName _ =
+    { moduleName = Node.value moduleName
+    , range = Nothing
+    , isProgramStringTarget = False
+    , cssStyles = []
     }
 
 
@@ -85,6 +112,9 @@ fromModuleToProject moduleKey moduleName moduleContext =
 
         else
             Nothing
+    , allCssProperties =
+        Dict.fromList
+            [ ( String.join "." moduleContext.moduleName, moduleContext.cssStyles ) ]
     }
 
 
@@ -94,6 +124,7 @@ foldProjectContexts newContext previousContext =
         Maybe.Extra.or
             previousContext.fixPlaceholderModuleKey
             newContext.fixPlaceholderModuleKey
+    , allCssProperties = Dict.union newContext.allCssProperties previousContext.allCssProperties |> Debug.log "ALL PROPS"
     }
 
 
@@ -120,9 +151,10 @@ moduleDefinitionVisitor node context =
     if (Node.value node |> Module.moduleName) == [ "StubCssGenerator" ] then
         ( []
         , { context
-            | isSpecialModule = True
+            | isProgramStringTarget = True
+            , moduleName = Node.value node |> Module.moduleName
           }
         )
 
     else
-        ( [], context )
+        ( [], { context | isProgramStringTarget = False } )
