@@ -35,7 +35,7 @@ view =
             , Css.color (Css.hex "#ffffff")
             ]
         ]
-        []
+        [ div [] [] ]
 """
                 , extractorModule
                 ]
