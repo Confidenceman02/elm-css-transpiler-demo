@@ -1,3 +1,3 @@
-.PHONY: run-test
-run-test:
-	yarn --cwd elm-review-elm-css-extract test:run
+.PHONY: test-run
+test-run:
+	yarn --cwd elm-review-elm-css-extract elm-test
